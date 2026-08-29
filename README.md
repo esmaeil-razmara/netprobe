@@ -30,10 +30,12 @@ Sweep a subnet for hosts with port 22 open:
 netprobe sweep 192.168.1.0/24 -p 22
 ```
 
-Adjust the per-connection timeout (default 1.0s):
+Adjust the per-connection timeout (default 1.0s). `--timeout` works either
+before or after the subcommand:
 
 ```bash
 netprobe --timeout 0.5 scan 10.0.0.5
+netprobe scan 10.0.0.5 --timeout 0.5
 ```
 
 You can also run it as a module: `python -m netprobe scan localhost`.

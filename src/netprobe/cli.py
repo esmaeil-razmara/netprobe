@@ -9,22 +9,34 @@ from . import __version__
 from .scanner import parse_ports, scan_ports, sweep
 
 
+TIMEOUT_DEFAULT = 1.0
+
+
+def _add_timeout(parser: argparse.ArgumentParser, default: object) -> None:
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=float,
+        default=default,
+        help=f"per-connection timeout in seconds (default: {TIMEOUT_DEFAULT})",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="netprobe",
         description="Small TCP network probing toolkit.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument(
-        "-t",
-        "--timeout",
-        type=float,
-        default=1.0,
-        help="per-connection timeout in seconds (default: 1.0)",
-    )
+    # `--timeout` is accepted both before the subcommand (real default here) and
+    # after it (on each subparser). The subparsers use `SUPPRESS` so that, when
+    # the flag is omitted after the subcommand, argparse does not copy a second
+    # default back over a value that was given before it.
+    _add_timeout(parser, TIMEOUT_DEFAULT)
     sub = parser.add_subparsers(dest="command", required=True)
 
     scan = sub.add_parser("scan", help="TCP connect scan of one host")
+    _add_timeout(scan, argparse.SUPPRESS)
     scan.add_argument("host")
     scan.add_argument(
         "-p",
@@ -33,7 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="port spec, e.g. '22,80,8000-8010' (default: 1-1024)",
     )
 
-    sweep_cmd = sub.add_parser("sweep", help="find hosts in a subnet with a port open")
+    sweep_cmd = sub.add_parser(
+        "sweep", help="find hosts in a subnet with a port open"
+    )
+    _add_timeout(sweep_cmd, argparse.SUPPRESS)
     sweep_cmd.add_argument("network", help="CIDR, e.g. 192.168.1.0/24")
     sweep_cmd.add_argument("-p", "--port", type=int, default=80, help="port (default: 80)")
 
