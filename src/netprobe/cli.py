@@ -52,6 +52,14 @@ def build_parser() -> argparse.ArgumentParser:
     sweep_cmd.add_argument("network", help="CIDR, e.g. 192.168.1.0/24")
     sweep_cmd.add_argument("-p", "--port", type=int, default=80, help="port (default: 80)")
 
+    serve_cmd = sub.add_parser("serve", help="run the modular web panel")
+    serve_cmd.add_argument(
+        "--host", default="127.0.0.1", help="bind address (default: 127.0.0.1)"
+    )
+    serve_cmd.add_argument(
+        "--port", type=int, default=8765, help="bind port (default: 8765)"
+    )
+
     return parser
 
 
@@ -76,6 +84,12 @@ def main(argv: list[str] | None = None) -> int:
         for host in live:
             print(f"{host}:{args.port} open")
         print(f"{len(live)} host(s) responding", file=sys.stderr)
+        return 0
+
+    if args.command == "serve":
+        from .web.server import serve as run_panel
+
+        run_panel(args.host, args.port)
         return 0
 
     return 1  # pragma: no cover - argparse enforces a valid command

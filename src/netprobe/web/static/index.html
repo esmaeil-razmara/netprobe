@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>netprobe panel</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>netprobe</h1>
+      <span class="tagline">TCP probing panel</span>
+    </header>
+    <main>
+      <nav id="tool-list" aria-label="Tools"></nav>
+      <section id="workspace">
+        <p class="empty">Loading tools&hellip;</p>
+      </section>
+    </main>
+    <template id="tool-view">
+      <div class="tool">
+        <h2 class="tool-title"></h2>
+        <p class="tool-desc"></p>
+        <form class="tool-form"></form>
+        <p class="tool-error" hidden></p>
+        <div class="tool-result" hidden>
+          <p class="result-summary"></p>
+          <div class="result-table-wrap"><table class="result-table"></table></div>
+        </div>
+      </div>
+    </template>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
