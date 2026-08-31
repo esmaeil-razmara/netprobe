@@ -28,6 +28,7 @@ class Device:
     name: str = ""
     kind: str = "other"
     community: str = ""
+    username: str = ""
     notes: str = ""
     added: str = ""
 

@@ -1,7 +1,8 @@
 # netprobe
 
-A small, dependency-free TCP network probing toolkit with a command-line
-interface and a modular web panel.
+A small network probing toolkit with a command-line interface and a modular web
+panel. The core has no third-party dependencies; only the Cisco-over-SSH tools
+need an optional extra (`netprobe[ssh]`, which pulls in `netmiko`).
 
 The CLI covers the two core probes:
 
@@ -15,15 +16,18 @@ The web panel (`netprobe serve`) groups every capability into two menus:
   TLS certificate, TCP ping
 - **Network monitoring** — availability (uptime over a time window),
   certificate watch (TLS expiry across many hosts), host status (up/down list)
-- **Device monitoring** — Cisco interface status and bandwidth over SNMP v2c,
-  FortiGate interfaces / WAN (SD-WAN) health / top talkers over the FortiOS
-  REST API, plus **device discovery** (sweep a range for SNMP devices) and a
-  **saved device inventory** so you don't retype switch addresses
+- **Device monitoring**
+  - Cisco interface status and bandwidth over **SNMP v2c**
+  - Cisco command / MAC table / CDP-LLDP neighbours over **SSH** (needs
+    `netprobe[ssh]`; only read-only `show`/`display` commands are permitted)
+  - FortiGate interfaces / WAN (SD-WAN) health / top talkers over the **FortiOS
+    REST API**
+  - **device discovery** (sweep a range for SNMP devices) and a **saved device
+    inventory** so you don't retype switch addresses
 
-The SNMP and FortiGate clients are both hand-rolled on the standard library —
-still no third-party dependencies. FortiGate API tokens are entered per run and
-never stored. SNMP community strings can optionally be saved with a device (see
-below).
+The SNMP and FortiGate clients are hand-rolled on the standard library. FortiGate
+API tokens and SSH passwords are entered per run and never stored. SNMP community
+strings and SSH usernames can optionally be saved with a device (see below).
 
 ### Saved devices
 
@@ -43,10 +47,12 @@ type it per run.
 ## Install
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e .            # core only
+python -m pip install -e ".[ssh]"     # + Cisco SSH tools (netmiko)
+python -m pip install -e ".[dev]"     # + test dependencies
 ```
 
-This requires Python 3.8+ and installs a `netprobe` console command.
+This requires Python 3.9+ and installs a `netprobe` console command.
 
 ## Usage
 
@@ -114,7 +120,8 @@ register(Tool(
 
 The registry auto-discovers it, the API exposes it at `POST /api/tools/whois`,
 and the front end renders the form and results table from the field list — no
-other files need editing. `Field` types are `text`, `number` and `textarea`.
+other files need editing. `Field` types are `text`, `number`, `textarea` and
+`password` (password fields are never persisted).
 
 ## Development
 
@@ -124,7 +131,7 @@ NETPROBE_NETWORK_TESTS=1 python -m pytest  # also run tests that hit the interne
 ```
 
 CI (`.github/workflows/ci.yml`) runs the default suite on Linux and Windows
-across Python 3.8 / 3.11 / 3.12.
+across Python 3.9 / 3.11 / 3.12.
 
 ## License
 

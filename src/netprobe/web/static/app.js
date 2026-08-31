@@ -31,16 +31,11 @@ async function api(path, options) {
 
 /* ---------- saved device inventory ---------------------------------- */
 
-let inventoryCache = null;
-
-async function loadInventory(force) {
-  if (force) inventoryCache = null;
-  if (!inventoryCache) {
-    inventoryCache = api("/api/inventory")
-      .then((d) => d.devices || [])
-      .catch(() => []);
-  }
-  return inventoryCache;
+async function loadInventory() {
+  // cheap localhost call; always fetch fresh so the picker reflects new saves
+  return api("/api/inventory")
+    .then((d) => d.devices || [])
+    .catch(() => []);
 }
 
 async function addDevicePicker(view, form) {
@@ -65,6 +60,10 @@ async function addDevicePicker(view, form) {
     const dev = devices.find((d) => d.host === select.value);
     const hostInput = form.querySelector('[name="host"], [name="range"]');
     if (dev && hostInput) hostInput.value = dev.host;
+    const userInput = form.querySelector('[name="username"]');
+    if (dev && userInput && dev.username) userInput.value = dev.username;
+    const kindInput = form.querySelector('[name="kind"]');
+    if (dev && kindInput && dev.kind) kindInput.value = dev.kind;
     if (communityInput) {
       if (dev && dev.has_community) {
         communityInput.value = "";
@@ -259,7 +258,6 @@ function selectTool(name) {
         body: JSON.stringify(params),
       });
       renderResult(view, data);
-      if (name === "devices" || name === "snmp-discover") loadInventory(true);
       pushHistory(name, withoutSecrets(params), data);
       renderHistory(view, tool);
     } catch (err) {

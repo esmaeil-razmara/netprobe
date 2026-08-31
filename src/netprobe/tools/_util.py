@@ -36,3 +36,16 @@ def resolve_community(params: dict, host: str) -> str:
     if device and device.community:
         return device.community
     raise ValueError("community string is required (or save it with the device)")
+
+
+def resolve_username(params: dict, host: str) -> str:
+    """SSH username from the form, or the one saved with ``host``."""
+    username = (params.get("username") or "").strip()
+    if username:
+        return username
+    from ..inventory import get_inventory
+
+    device = get_inventory().get(host)
+    if device and device.username:
+        return device.username
+    raise ValueError("username is required (or save it with the device)")

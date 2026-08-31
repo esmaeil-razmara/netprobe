@@ -7,7 +7,7 @@ name = "netprobe"
 version = "0.1.0"
 description = "Small TCP network probing toolkit with a modular web panel."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Esmaeil Razmara" }]
 keywords = ["network", "port-scanner", "cli", "tcp"]
@@ -21,7 +21,8 @@ classifiers = [
 netprobe = "netprobe.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+ssh = ["netmiko>=4.1"]
+dev = ["pytest>=7.0", "netprobe[ssh]"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
