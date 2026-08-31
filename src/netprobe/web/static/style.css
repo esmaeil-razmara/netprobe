@@ -97,37 +97,50 @@ body > header {
 }
 
 main {
-  display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
-  gap: 24px;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 20px 24px 32px;
 }
 
-nav { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 24px; align-self: start; }
-.nav-group { display: flex; flex-direction: column; gap: 3px; }
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+}
+.nav-cat { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nav-cat + .nav-cat { border-left: 1px solid var(--border); padding-left: 18px; }
+.nav-group { display: flex; flex-wrap: wrap; gap: 4px; }
 .nav-group-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  padding: 0 12px 4px;
+  white-space: nowrap;
 }
-.nav-group-label + .nav-group { margin-top: -8px; }
 nav button {
-  text-align: left;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border: 1px solid transparent;
-  border-radius: 9px;
-  background: none;
+  border-radius: 8px;
+  background: var(--panel-2);
   color: var(--text);
   font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
 }
-nav button:hover { background: var(--panel); border-color: var(--border); }
-nav button[aria-current="true"] { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+nav button:hover { border-color: var(--accent); }
+nav button[aria-current="true"] { background: var(--accent); color: var(--accent-text); font-weight: 600; border-color: var(--accent); }
 
 .placeholder { color: var(--muted); }
 
@@ -254,6 +267,8 @@ nav button[aria-current="true"] { background: var(--accent); color: var(--accent
 .history-summary { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 680px) {
-  main { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-  nav { position: static; flex-direction: row; flex-wrap: wrap; }
+  main { padding: 14px; }
+  nav { position: static; gap: 8px 12px; }
+  .nav-cat { width: 100%; }
+  .nav-cat + .nav-cat { border-left: 0; padding-left: 0; border-top: 1px solid var(--border); padding-top: 8px; }
 }

@@ -75,12 +75,15 @@ function renderNav() {
     const category = tool.category || "Tools";
     if (category !== currentCategory) {
       currentCategory = category;
+      const cat = document.createElement("div");
+      cat.className = "nav-cat";
       const label = document.createElement("span");
       label.className = "nav-group-label";
       label.textContent = category;
       groupEl = document.createElement("div");
       groupEl.className = "nav-group";
-      listEl.append(label, groupEl);
+      cat.append(label, groupEl);
+      listEl.append(cat);
     }
     const btn = document.createElement("button");
     btn.type = "button";
