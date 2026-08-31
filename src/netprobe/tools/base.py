@@ -12,7 +12,7 @@ class Field:
 
     name: str
     label: str
-    type: str = "text"  # "text" | "number"
+    type: str = "text"  # "text" | "number" | "textarea"
     default: Any = ""
     placeholder: str = ""
     required: bool = True
@@ -52,12 +52,16 @@ class Result:
         }
 
 
+DEFAULT_CATEGORY = "Network tools"
+
+
 @dataclass(frozen=True)
 class Tool:
     """A self-contained panel module.
 
     Add a new capability by dropping a file in ``netprobe/tools/`` that builds a
-    ``Tool`` and passes it to :func:`netprobe.tools.register`.
+    ``Tool`` and passes it to :func:`netprobe.tools.register`. ``category`` is the
+    heading the panel groups it under in the sidebar.
     """
 
     name: str
@@ -65,11 +69,13 @@ class Tool:
     description: str
     run: Callable[[Dict[str, str]], Result]
     fields: List[Field] = field(default_factory=list)
+    category: str = DEFAULT_CATEGORY
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "title": self.title,
             "description": self.description,
+            "category": self.category,
             "fields": [f.to_dict() for f in self.fields],
         }

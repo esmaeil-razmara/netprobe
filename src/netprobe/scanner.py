@@ -89,6 +89,31 @@ def scan_ports(
     return sorted(results, key=lambda r: r.port)
 
 
+def monitor_endpoint(
+    host: str,
+    port: int,
+    duration: float,
+    interval: float,
+    timeout: float = 2.0,
+) -> List[tuple]:
+    """Probe ``host:port`` every ``interval`` seconds for up to ``duration``.
+
+    Returns ``(elapsed_seconds, latency_ms_or_None)`` tuples, one per sample.
+    Always takes at least one sample.
+    """
+    interval = max(0.1, interval)
+    started = time.perf_counter()
+    samples: List[tuple] = []
+    while True:
+        elapsed = time.perf_counter() - started
+        (latency,) = tcp_latency(host, port, count=1, timeout=timeout)
+        samples.append((round(elapsed, 2), latency))
+        if time.perf_counter() - started >= duration:
+            break
+        time.sleep(interval)
+    return samples
+
+
 def sweep(network: str, port: int, timeout: float = 1.0, workers: int = 100) -> list[str]:
     """Return the hosts in ``network`` (CIDR) that accept a TCP connect on ``port``."""
     hosts = [str(ip) for ip in ipaddress.ip_network(network, strict=False).hosts()]

@@ -69,13 +69,25 @@ const HISTORY_LIMIT = 10;
 
 function renderNav() {
   listEl.replaceChildren();
+  let currentCategory = null;
+  let groupEl = null;
   for (const tool of tools) {
+    const category = tool.category || "Tools";
+    if (category !== currentCategory) {
+      currentCategory = category;
+      const label = document.createElement("span");
+      label.className = "nav-group-label";
+      label.textContent = category;
+      groupEl = document.createElement("div");
+      groupEl.className = "nav-group";
+      listEl.append(label, groupEl);
+    }
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = tool.title;
     btn.setAttribute("aria-current", String(tool.name === activeName));
     btn.addEventListener("click", () => selectTool(tool.name));
-    listEl.append(btn);
+    groupEl.append(btn);
   }
 }
 
@@ -105,11 +117,17 @@ function selectTool(name) {
     label.textContent = field.label;
     label.htmlFor = id;
 
-    const input = document.createElement("input");
+    const input = document.createElement(
+      field.type === "textarea" ? "textarea" : "input"
+    );
     input.id = id;
     input.name = field.name;
-    input.type = field.type === "number" ? "number" : "text";
-    if (field.type === "number") input.step = "any";
+    if (field.type === "textarea") {
+      input.rows = 4;
+    } else {
+      input.type = field.type === "number" ? "number" : "text";
+      if (field.type === "number") input.step = "any";
+    }
     if (field.placeholder) input.placeholder = field.placeholder;
     if (field.required) input.required = true;
     const initial =
@@ -117,6 +135,7 @@ function selectTool(name) {
         ? saved[field.name]
         : field.default;
     if (initial != null && initial !== "") input.value = initial;
+    if (field.type === "textarea") wrap.classList.add("field-wide");
 
     wrap.append(label, input);
     if (field.help) {

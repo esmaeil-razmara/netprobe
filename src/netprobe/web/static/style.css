@@ -105,10 +105,20 @@ main {
   padding: 24px;
 }
 
-nav { display: flex; flex-direction: column; gap: 3px; position: sticky; top: 24px; align-self: start; }
+nav { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 24px; align-self: start; }
+.nav-group { display: flex; flex-direction: column; gap: 3px; }
+.nav-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0 12px 4px;
+}
+.nav-group-label + .nav-group { margin-top: -8px; }
 nav button {
   text-align: left;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid transparent;
   border-radius: 9px;
   background: none;
@@ -134,8 +144,9 @@ nav button[aria-current="true"] { background: var(--accent); color: var(--accent
 
 .fields { display: grid; gap: 13px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .field { display: flex; flex-direction: column; gap: 5px; }
+.field-wide { grid-column: 1 / -1; }
 .field label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
-.field input {
+.field input, .field textarea {
   padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -143,7 +154,8 @@ nav button[aria-current="true"] { background: var(--accent); color: var(--accent
   color: var(--text);
   font: inherit;
 }
-.field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+.field textarea { resize: vertical; min-height: 66px; font-family: var(--mono); font-size: 13px; }
+.field input:focus, .field textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
 .field .hint { font-size: 12px; color: var(--muted); }
 
 .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }

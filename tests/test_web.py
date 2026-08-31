@@ -96,6 +96,13 @@ def test_api_lists_tools(panel):
     assert {"scan", "sweep"} <= {t["name"] for t in tools}
     scan = next(t for t in tools if t["name"] == "scan")
     assert [f["name"] for f in scan["fields"]] == ["host", "ports", "timeout"]
+    assert scan["category"] == "Network tools"
+    categories = [t["category"] for t in tools]
+    # monitoring tools all sort after the plain network tools
+    assert categories == sorted(
+        categories, key=lambda c: 0 if c == "Network tools" else 1
+    )
+    assert "Network monitoring" in categories
 
 
 def test_api_runs_scan(panel, listening_port):

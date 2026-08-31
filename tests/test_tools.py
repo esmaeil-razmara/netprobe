@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from netprobe.scanner import tcp_latency
+from netprobe.scanner import monitor_endpoint, tcp_latency
 from netprobe.tools import get_tool
 from netprobe.tools.tls_tool import summarise_cert
 
@@ -138,3 +138,93 @@ def test_tcping_reports_latency(listening_port):
 def test_tcping_rejects_bad_count():
     with pytest.raises(ValueError):
         get_tool("tcping").run({"host": "127.0.0.1", "count": "999"})
+
+
+# -- subnet calculator ------------------------------------------------
+
+def test_subnet_calculator_basic():
+    result = get_tool("subnet").run({"cidr": "192.168.1.0/24"})
+    fields = dict(result.rows)
+    assert fields["netmask"] == "255.255.255.0"
+    assert fields["usable hosts"] == "254"
+    assert fields["broadcast"] == "192.168.1.255"
+
+
+def test_subnet_calculator_rejects_garbage():
+    with pytest.raises(ValueError):
+        get_tool("subnet").run({"cidr": "not-a-network"})
+
+
+# -- scanner.monitor_endpoint + availability ------------------------
+
+def test_monitor_endpoint_samples_within_window(listening_port):
+    samples = monitor_endpoint(
+        "127.0.0.1", listening_port, duration=0.6, interval=0.2, timeout=1.0
+    )
+    assert len(samples) >= 2
+    assert all(latency is not None for _elapsed, latency in samples)
+
+
+def test_availability_tool_all_up(listening_port):
+    result = get_tool("availability").run(
+        {
+            "host": "127.0.0.1",
+            "port": str(listening_port),
+            "duration": "1",
+            "interval": "0.3",
+        }
+    )
+    assert result.level == "ok"
+    assert "100% up" in result.summary
+
+
+def test_availability_tool_rejects_long_duration():
+    with pytest.raises(ValueError):
+        get_tool("availability").run({"host": "127.0.0.1", "duration": "9999"})
+
+
+# -- host status ----------------------------------------------------
+
+def test_host_status_mixed(listening_port):
+    result = get_tool("hosts").run(
+        {"hosts": f"127.0.0.1:{listening_port}\n127.0.0.1:1", "timeout": "0.4"}
+    )
+    states = {row[0]: row[1] for row in result.rows}
+    assert states[f"127.0.0.1:{listening_port}"] == "UP"
+    assert states["127.0.0.1:1"] == "DOWN"
+    assert result.level == "warn"
+
+
+def test_host_status_requires_hosts():
+    with pytest.raises(ValueError):
+        get_tool("hosts").run({"hosts": "   "})
+
+
+# -- cert watch (error path is hermetic) --------------------------
+
+def test_cert_watch_reports_unreachable_host():
+    result = get_tool("cert-watch").run(
+        {"hosts": "127.0.0.1:1", "timeout": "0.3"}
+    )
+    assert result.level == "error"
+    assert result.rows[0][2] == "error"
+
+
+# -- network-dependent (skipped unless NETPROBE_NETWORK_TESTS=1) ---
+
+@pytest.mark.network
+def test_dns_records_live():
+    result = get_tool("dns-records").run({"name": "one.one.one.one", "types": "A"})
+    assert any(row[0] == "A" for row in result.rows)
+
+
+@pytest.mark.network
+def test_whois_live():
+    result = get_tool("whois").run({"target": "example.com"})
+    assert result.rows
+
+
+@pytest.mark.network
+def test_cert_watch_live():
+    result = get_tool("cert-watch").run({"hosts": "example.com\nwww.example.org"})
+    assert len(result.rows) == 2

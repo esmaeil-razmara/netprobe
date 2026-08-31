@@ -11,12 +11,23 @@ import importlib
 import pkgutil
 from typing import Dict, List
 
-from .base import Field, Result, Tool
+from .base import DEFAULT_CATEGORY, Field, Result, Tool
 
 __all__ = ["Field", "Result", "Tool", "register", "load_tools", "get_tool"]
 
+# Categories render in this order; anything else follows, alphabetically.
+CATEGORY_ORDER = [DEFAULT_CATEGORY, "Network monitoring"]
+
 _REGISTRY: "Dict[str, Tool]" = {}
 _LOADED = False
+
+
+def _sort_key(tool: Tool):
+    try:
+        category_rank = CATEGORY_ORDER.index(tool.category)
+    except ValueError:
+        category_rank = len(CATEGORY_ORDER)
+    return (category_rank, tool.category.lower(), tool.title.lower())
 
 
 def register(tool: Tool) -> Tool:
@@ -35,7 +46,7 @@ def load_tools() -> List[Tool]:
             if info.name != "base":
                 importlib.import_module(f"{__name__}.{info.name}")
         _LOADED = True
-    return sorted(_REGISTRY.values(), key=lambda t: t.title.lower())
+    return sorted(_REGISTRY.values(), key=_sort_key)
 
 
 def get_tool(name: str) -> "Tool | None":

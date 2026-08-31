@@ -8,9 +8,13 @@ The CLI covers the two core probes:
 - **`scan`** — TCP connect scan of a single host across a set of ports
 - **`sweep`** — find which hosts in a subnet accept a connection on a given port
 
-The web panel (`netprobe serve`) adds four more modules on top of those:
-**DNS lookup**, **HTTP check**, **TLS certificate**, and **TCP ping** (handshake
-latency).
+The web panel (`netprobe serve`) groups every capability into two menus:
+
+- **Network tools** — port scan, subnet sweep, DNS lookup, DNS records
+  (A/AAAA/MX/TXT/NS/… over UDP), WHOIS, subnet calculator, HTTP check,
+  TLS certificate, TCP ping
+- **Network monitoring** — availability (uptime over a time window),
+  certificate watch (TLS expiry across many hosts), host status (up/down list)
 
 > Only probe hosts and networks you own or are explicitly authorised to test.
 
@@ -82,18 +86,23 @@ register(Tool(
     description="Look up registration details for a domain.",
     run=_run,
     fields=[Field("host", "Domain", "text", "", "example.com")],
+    category="Network tools",  # or "Network monitoring"; this is the sidebar menu
 ))
 ```
 
 The registry auto-discovers it, the API exposes it at `POST /api/tools/whois`,
 and the front end renders the form and results table from the field list — no
-other files need editing.
+other files need editing. `Field` types are `text`, `number` and `textarea`.
 
 ## Development
 
 ```bash
-python -m pytest
+python -m pytest                          # unit + local-socket tests
+NETPROBE_NETWORK_TESTS=1 python -m pytest  # also run tests that hit the internet
 ```
+
+CI (`.github/workflows/ci.yml`) runs the default suite on Linux and Windows
+across Python 3.8 / 3.11 / 3.12.
 
 ## License
 

@@ -49,13 +49,11 @@ def _days_remaining(rows: List[List[str]]) -> "int | None":
     return None
 
 
-def _run(params: Dict[str, str]) -> Result:
-    host = (params.get("host") or "").strip()
-    if not host:
-        raise ValueError("host is required")
-    port = int(params.get("port") or 443)
-    timeout = float(params.get("timeout") or 5.0)
+def inspect_host(host: str, port: int, timeout: float):
+    """Connect and return ``(version, rows, days_remaining)``.
 
+    Raises ``ValueError`` on any connection or verification failure.
+    """
     context = ssl.create_default_context()
     try:
         with socket.create_connection((host, port), timeout=timeout) as raw:
@@ -68,7 +66,17 @@ def _run(params: Dict[str, str]) -> Result:
         raise ValueError(f"TLS connection failed: {exc}")
 
     rows = [["protocol", version or "?"]] + summarise_cert(cert or {})
-    days = _days_remaining(rows)
+    return version, rows, _days_remaining(rows)
+
+
+def _run(params: Dict[str, str]) -> Result:
+    host = (params.get("host") or "").strip()
+    if not host:
+        raise ValueError("host is required")
+    port = int(params.get("port") or 443)
+    timeout = float(params.get("timeout") or 5.0)
+
+    version, rows, days = inspect_host(host, port, timeout)
     if days is None:
         level, note = "ok", ""
     elif days < 0:
