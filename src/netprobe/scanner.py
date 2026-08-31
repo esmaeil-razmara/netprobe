@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from typing import List, Optional
 
 
 @dataclass(frozen=True)
@@ -50,6 +52,28 @@ def probe_port(host: str, port: int, timeout: float = 1.0) -> PortResult:
     return PortResult(port=port, is_open=is_open)
 
 
+def tcp_latency(
+    host: str,
+    port: int,
+    count: int = 4,
+    timeout: float = 1.0,
+) -> List[Optional[float]]:
+    """Time ``count`` TCP handshakes to ``host:port``.
+
+    Returns one entry per attempt: round-trip milliseconds on success, or
+    ``None`` when the connection did not complete within ``timeout``.
+    """
+    samples: List[Optional[float]] = []
+    for _ in range(max(1, count)):
+        start = time.perf_counter()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout)
+            connected = sock.connect_ex((host, port)) == 0
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        samples.append(round(elapsed_ms, 2) if connected else None)
+    return samples
+
+
 def scan_ports(
     host: str,
     ports: list[int],
@@ -63,6 +87,31 @@ def scan_ports(
     with ThreadPoolExecutor(max_workers=worker_count) as pool:
         results = pool.map(lambda p: probe_port(host, p, timeout), ports)
     return sorted(results, key=lambda r: r.port)
+
+
+def monitor_endpoint(
+    host: str,
+    port: int,
+    duration: float,
+    interval: float,
+    timeout: float = 2.0,
+) -> List[tuple]:
+    """Probe ``host:port`` every ``interval`` seconds for up to ``duration``.
+
+    Returns ``(elapsed_seconds, latency_ms_or_None)`` tuples, one per sample.
+    Always takes at least one sample.
+    """
+    interval = max(0.1, interval)
+    started = time.perf_counter()
+    samples: List[tuple] = []
+    while True:
+        elapsed = time.perf_counter() - started
+        (latency,) = tcp_latency(host, port, count=1, timeout=timeout)
+        samples.append((round(elapsed, 2), latency))
+        if time.perf_counter() - started >= duration:
+            break
+        time.sleep(interval)
+    return samples
 
 
 def sweep(network: str, port: int, timeout: float = 1.0, workers: int = 100) -> list[str]:

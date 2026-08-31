@@ -17,6 +17,21 @@ def test_sweep_args_parse():
     assert args.port == 22
 
 
+def test_timeout_before_subcommand():
+    args = build_parser().parse_args(["--timeout", "0.5", "scan", "host"])
+    assert args.timeout == 0.5
+
+
+def test_timeout_after_subcommand():
+    args = build_parser().parse_args(["scan", "host", "--timeout", "0.5"])
+    assert args.timeout == 0.5
+
+
+def test_timeout_defaults_to_one():
+    args = build_parser().parse_args(["scan", "host"])
+    assert args.timeout == 1.0
+
+
 def test_missing_command_exits():
     with pytest.raises(SystemExit):
         build_parser().parse_args([])
