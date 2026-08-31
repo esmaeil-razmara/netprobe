@@ -113,36 +113,50 @@ const viewTpl = $("#tool-view");
 
 let tools = [];
 let activeName = null;
+let activeCategory = null;
 
 const paramsKey = (name) => `netprobe:params:${name}`;
 const historyKey = (name) => `netprobe:history:${name}`;
 const HISTORY_LIMIT = 10;
 
+const orderedCategories = () => {
+  const seen = [];
+  for (const t of tools) {
+    const c = t.category || "Tools";
+    if (!seen.includes(c)) seen.push(c);
+  }
+  return seen;
+};
+
 function renderNav() {
   listEl.replaceChildren();
-  let currentCategory = null;
-  let groupEl = null;
-  for (const tool of tools) {
-    const category = tool.category || "Tools";
-    if (category !== currentCategory) {
-      currentCategory = category;
-      const cat = document.createElement("div");
-      cat.className = "nav-cat";
-      const label = document.createElement("span");
-      label.className = "nav-group-label";
-      label.textContent = category;
-      groupEl = document.createElement("div");
-      groupEl.className = "nav-group";
-      cat.append(label, groupEl);
-      listEl.append(cat);
-    }
+
+  const tabs = document.createElement("div");
+  tabs.className = "nav-tabs";
+  for (const category of orderedCategories()) {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.textContent = category;
+    tab.setAttribute("aria-selected", String(category === activeCategory));
+    tab.addEventListener("click", () => {
+      const first = tools.find((t) => (t.category || "Tools") === category);
+      if (first) selectTool(first.name);
+    });
+    tabs.append(tab);
+  }
+
+  const toolRow = document.createElement("div");
+  toolRow.className = "nav-tools";
+  for (const tool of tools.filter((t) => (t.category || "Tools") === activeCategory)) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = tool.title;
     btn.setAttribute("aria-current", String(tool.name === activeName));
     btn.addEventListener("click", () => selectTool(tool.name));
-    groupEl.append(btn);
+    toolRow.append(btn);
   }
+
+  listEl.append(tabs, toolRow);
 }
 
 /* ---------- one tool view ------------------------------------------------ */
@@ -151,6 +165,7 @@ function selectTool(name) {
   const tool = tools.find((t) => t.name === name);
   if (!tool) return;
   activeName = name;
+  activeCategory = tool.category || "Tools";
   if (location.hash !== `#${name}`) location.hash = name;
   renderNav();
 
