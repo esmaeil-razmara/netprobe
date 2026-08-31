@@ -15,6 +15,14 @@ The web panel (`netprobe serve`) groups every capability into two menus:
   TLS certificate, TCP ping
 - **Network monitoring** — availability (uptime over a time window),
   certificate watch (TLS expiry across many hosts), host status (up/down list)
+- **Device monitoring** — Cisco interface status and bandwidth over SNMP v2c,
+  FortiGate interfaces / WAN (SD-WAN) health / top talkers over the FortiOS
+  REST API
+
+Credentials (SNMP community strings, FortiGate API tokens) are entered per run
+and are never written to disk or browser storage. The SNMP and FortiGate
+clients are both hand-rolled on the standard library — still no third-party
+dependencies.
 
 > Only probe hosts and networks you own or are explicitly authorised to test.
 

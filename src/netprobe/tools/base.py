@@ -12,7 +12,7 @@ class Field:
 
     name: str
     label: str
-    type: str = "text"  # "text" | "number" | "textarea"
+    type: str = "text"  # "text" | "number" | "textarea" | "password"
     default: Any = ""
     placeholder: str = ""
     required: bool = True

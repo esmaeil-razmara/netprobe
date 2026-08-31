@@ -127,14 +127,18 @@ function selectTool(name) {
     input.name = field.name;
     if (field.type === "textarea") {
       input.rows = 4;
+    } else if (field.type === "password") {
+      input.type = "password";
+      input.autocomplete = "off";
     } else {
       input.type = field.type === "number" ? "number" : "text";
       if (field.type === "number") input.step = "any";
     }
     if (field.placeholder) input.placeholder = field.placeholder;
     if (field.required) input.required = true;
+    // password fields are never persisted, so never pre-filled from storage
     const initial =
-      saved[field.name] != null && saved[field.name] !== ""
+      field.type !== "password" && saved[field.name] != null && saved[field.name] !== ""
         ? saved[field.name]
         : field.default;
     if (initial != null && initial !== "") input.value = initial;
@@ -155,11 +159,21 @@ function selectTool(name) {
   const errEl = $(".tool-error", view);
   const resultEl = $(".tool-result", view);
 
+  const secretNames = new Set(
+    tool.fields.filter((f) => f.type === "password").map((f) => f.name)
+  );
+  const withoutSecrets = (obj) => {
+    const copy = {};
+    for (const [k, v] of Object.entries(obj)) if (!secretNames.has(k)) copy[k] = v;
+    return copy;
+  };
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const params = {};
     for (const [key, value] of new FormData(form)) params[key] = value.trim();
-    store.set(paramsKey(name), params);
+    // never persist secrets (tokens, community strings) to localStorage
+    store.set(paramsKey(name), withoutSecrets(params));
 
     errEl.hidden = true;
     runBtn.disabled = true;
@@ -175,7 +189,7 @@ function selectTool(name) {
         body: JSON.stringify(params),
       });
       renderResult(view, data);
-      pushHistory(name, params, data);
+      pushHistory(name, withoutSecrets(params), data);
       renderHistory(view, tool);
     } catch (err) {
       resultEl.hidden = true;
