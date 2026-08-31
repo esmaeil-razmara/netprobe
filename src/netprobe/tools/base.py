@@ -32,14 +32,24 @@ class Field:
 
 @dataclass(frozen=True)
 class Result:
-    """A tool's output: a table plus a one-line summary."""
+    """A tool's output: a table plus a one-line summary.
+
+    ``level`` is a hint for the panel: ``"ok"``, ``"warn"`` or ``"error"``
+    (the run still succeeded -- it just colours the summary).
+    """
 
     columns: List[str]
     rows: List[List[Any]]
     summary: str = ""
+    level: str = "ok"
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"columns": self.columns, "rows": self.rows, "summary": self.summary}
+        return {
+            "columns": self.columns,
+            "rows": self.rows,
+            "summary": self.summary,
+            "level": self.level,
+        }
 
 
 @dataclass(frozen=True)

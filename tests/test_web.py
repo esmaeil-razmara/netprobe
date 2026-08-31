@@ -93,7 +93,7 @@ def test_api_lists_tools(panel):
     status, body = _get(f"{panel}/api/tools")
     assert status == 200
     tools = json.loads(body)["tools"]
-    assert {t["name"] for t in tools} == {"scan", "sweep"}
+    assert {"scan", "sweep"} <= {t["name"] for t in tools}
     scan = next(t for t in tools if t["name"] == "scan")
     assert [f["name"] for f in scan["fields"]] == ["host", "ports", "timeout"]
 

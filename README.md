@@ -1,10 +1,16 @@
 # netprobe
 
 A small, dependency-free TCP network probing toolkit with a command-line
-interface and a modular web panel. It does two things out of the box:
+interface and a modular web panel.
+
+The CLI covers the two core probes:
 
 - **`scan`** — TCP connect scan of a single host across a set of ports
 - **`sweep`** — find which hosts in a subnet accept a connection on a given port
+
+The web panel (`netprobe serve`) adds four more modules on top of those:
+**DNS lookup**, **HTTP check**, **TLS certificate**, and **TCP ping** (handshake
+latency).
 
 > Only probe hosts and networks you own or are explicitly authorised to test.
 
@@ -51,6 +57,10 @@ The panel is served by the standard library only (no Flask/Django). It binds to
 `127.0.0.1` by default — this is a tool that makes outbound connections on your
 behalf, so do not expose it to an untrusted network.
 
+The UI keeps the last-used inputs and the last 10 runs per tool (in the
+browser's `localStorage`), has a light/dark toggle, sortable and filterable
+result tables, and CSV/JSON export. `#<tool>` in the URL selects a tool.
+
 ### Adding a panel module
 
 Every capability in the panel is a file in [`src/netprobe/tools/`](src/netprobe/tools).
@@ -62,8 +72,9 @@ from . import Field, Result, Tool, register
 
 def _run(params):
     host = params["host"]
-    # ... do the work ...
-    return Result(columns=["key", "value"], rows=[["registrar", "..."]], summary="ok")
+    # ... do the work; raise ValueError for bad input ...
+    return Result(columns=["key", "value"], rows=[["registrar", "..."]],
+                  summary="ok", level="ok")  # level: "ok" | "warn" | "error"
 
 register(Tool(
     name="whois",

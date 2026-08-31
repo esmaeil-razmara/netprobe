@@ -8,27 +8,64 @@
   </head>
   <body>
     <header>
-      <h1>netprobe</h1>
-      <span class="tagline">TCP probing panel</span>
+      <div class="brand">
+        <span class="logo">netprobe</span>
+        <span class="tagline">TCP probing panel</span>
+      </div>
+      <button id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+        <span class="theme-icon"></span>
+      </button>
     </header>
+
     <main>
       <nav id="tool-list" aria-label="Tools"></nav>
       <section id="workspace">
-        <p class="empty">Loading tools&hellip;</p>
+        <p class="placeholder">Loading tools&hellip;</p>
       </section>
     </main>
+
     <template id="tool-view">
-      <div class="tool">
-        <h2 class="tool-title"></h2>
-        <p class="tool-desc"></p>
-        <form class="tool-form"></form>
-        <p class="tool-error" hidden></p>
-        <div class="tool-result" hidden>
-          <p class="result-summary"></p>
-          <div class="result-table-wrap"><table class="result-table"></table></div>
-        </div>
-      </div>
+      <article class="tool">
+        <header class="tool-head">
+          <h2 class="tool-title"></h2>
+          <p class="tool-desc"></p>
+        </header>
+
+        <form class="tool-form" autocomplete="off">
+          <div class="fields"></div>
+          <div class="form-actions">
+            <button class="run-btn" type="submit">Run</button>
+            <span class="run-status" aria-live="polite"></span>
+          </div>
+        </form>
+
+        <p class="tool-error" role="alert" hidden></p>
+
+        <section class="tool-result" hidden>
+          <div class="result-bar">
+            <span class="result-summary"></span>
+            <div class="result-tools">
+              <input class="result-filter" type="search" placeholder="filter rows" />
+              <button type="button" data-export="csv">Copy CSV</button>
+              <button type="button" data-export="json">Copy JSON</button>
+              <button type="button" data-export="download">Download CSV</button>
+            </div>
+          </div>
+          <div class="result-table-wrap">
+            <table class="result-table">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tool-history" hidden>
+          <h3>Recent runs</h3>
+          <ol class="history-list"></ol>
+        </section>
+      </article>
     </template>
+
     <script src="/static/app.js"></script>
   </body>
 </html>

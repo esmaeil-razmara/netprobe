@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from typing import List, Optional
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,28 @@ def probe_port(host: str, port: int, timeout: float = 1.0) -> PortResult:
         sock.settimeout(timeout)
         is_open = sock.connect_ex((host, port)) == 0
     return PortResult(port=port, is_open=is_open)
+
+
+def tcp_latency(
+    host: str,
+    port: int,
+    count: int = 4,
+    timeout: float = 1.0,
+) -> List[Optional[float]]:
+    """Time ``count`` TCP handshakes to ``host:port``.
+
+    Returns one entry per attempt: round-trip milliseconds on success, or
+    ``None`` when the connection did not complete within ``timeout``.
+    """
+    samples: List[Optional[float]] = []
+    for _ in range(max(1, count)):
+        start = time.perf_counter()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout)
+            connected = sock.connect_ex((host, port)) == 0
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        samples.append(round(elapsed_ms, 2) if connected else None)
+    return samples
 
 
 def scan_ports(
