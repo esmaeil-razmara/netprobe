@@ -59,6 +59,11 @@ def build_parser() -> argparse.ArgumentParser:
     serve_cmd.add_argument(
         "--port", type=int, default=8765, help="bind port (default: 8765)"
     )
+    serve_cmd.add_argument(
+        "--data-dir",
+        default=None,
+        help="directory for the saved device inventory (default: ~/.netprobe)",
+    )
 
     return parser
 
@@ -89,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "serve":
         from .web.server import serve as run_panel
 
-        run_panel(args.host, args.port)
+        run_panel(args.host, args.port, args.data_dir)
         return 0
 
     return 1  # pragma: no cover - argparse enforces a valid command

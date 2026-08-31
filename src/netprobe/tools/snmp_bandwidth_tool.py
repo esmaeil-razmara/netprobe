@@ -6,7 +6,7 @@ import time
 from typing import Dict, Tuple
 
 from ..snmp import SNMPError, walk
-from ._util import human_bps
+from ._util import human_bps, resolve_community
 from . import Field, Result, Tool, register
 
 _DESCR = "1.3.6.1.2.1.2.2.1.2"
@@ -46,9 +46,7 @@ def _run(params: Dict[str, str]) -> Result:
     host = (params.get("host") or "").strip()
     if not host:
         raise ValueError("host is required")
-    community = (params.get("community") or "").strip()
-    if not community:
-        raise ValueError("community string is required")
+    community = resolve_community(params, host)
     interval = float(params.get("interval") or 10.0)
     timeout = float(params.get("timeout") or 2.0)
     if not 2 <= interval <= 120:

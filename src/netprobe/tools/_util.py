@@ -23,3 +23,16 @@ def human_bps(bits_per_second: float) -> str:
 
 def truthy(value: object) -> bool:
     return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+def resolve_community(params: dict, host: str) -> str:
+    """Community string from the form, or the one saved with ``host``."""
+    community = (params.get("community") or "").strip()
+    if community:
+        return community
+    from ..inventory import get_inventory
+
+    device = get_inventory().get(host)
+    if device and device.community:
+        return device.community
+    raise ValueError("community string is required (or save it with the device)")

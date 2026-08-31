@@ -15,6 +15,7 @@ import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from ..inventory import Device, get_inventory
 from ..tools import get_tool, load_tools
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -58,6 +59,8 @@ class PanelHandler(BaseHTTPRequestHandler):
             self._file(STATIC_DIR / "index.html")
         elif route == "/api/tools":
             self._json({"tools": [t.to_dict() for t in load_tools()]})
+        elif route == "/api/inventory":
+            self._json({"devices": [d.public() for d in get_inventory().list()]})
         elif route.startswith("/static/"):
             self._file(STATIC_DIR / route[len("/static/") :])
         else:
@@ -68,37 +71,64 @@ class PanelHandler(BaseHTTPRequestHandler):
         # unread makes some clients see a connection reset instead of the status.
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b"{}"
-
-        prefix = "/api/tools/"
         route = self.path.split("?", 1)[0]
-        if not route.startswith(prefix):
-            self._json({"error": "not found"}, 404)
-            return
-        tool = get_tool(route[len(prefix) :])
-        if tool is None:
-            self._json({"error": "unknown tool"}, 404)
-            return
+
         try:
-            params = json.loads(raw or b"{}")
-            if not isinstance(params, dict):
+            body = json.loads(raw or b"{}")
+            if not isinstance(body, dict):
                 raise ValueError("request body must be a JSON object")
-            result = tool.run(params)
+            if route == "/api/inventory":
+                self._json(self._inventory_write(body))
+                return
+            prefix = "/api/tools/"
+            if not route.startswith(prefix):
+                self._json({"error": "not found"}, 404)
+                return
+            tool = get_tool(route[len(prefix):])
+            if tool is None:
+                self._json({"error": "unknown tool"}, 404)
+                return
+            self._json(tool.run(body).to_dict())
         except ValueError as exc:
             self._json({"error": str(exc)}, 400)
         except Exception as exc:  # report, don't take the panel down
             self._json({"error": f"{type(exc).__name__}: {exc}"}, 500)
-        else:
-            self._json(result.to_dict())
+
+    @staticmethod
+    def _inventory_write(body: dict) -> dict:
+        inv = get_inventory()
+        if body.get("action") == "remove":
+            removed = inv.remove(str(body.get("host", "")))
+            return {"removed": removed, "devices": [d.public() for d in inv.list()]}
+        entries = body.get("devices")
+        if entries is None:
+            entries = [body]
+        for entry in entries:
+            inv.upsert(Device(
+                host=str(entry.get("host", "")).strip(),
+                name=str(entry.get("name", "")).strip(),
+                kind=str(entry.get("kind", "other")).strip() or "other",
+                community=str(entry.get("community", "")),
+                notes=str(entry.get("notes", "")).strip(),
+            ))
+        return {"devices": [d.public() for d in inv.list()]}
 
     def log_message(self, *_args) -> None:  # keep the console quiet
         pass
 
 
-def serve(host: str = "127.0.0.1", port: int = 8765) -> None:
+def serve(host: str = "127.0.0.1", port: int = 8765,
+          data_dir: "str | None" = None) -> None:
+    if data_dir is not None:
+        from ..inventory import set_data_dir
+
+        set_data_dir(data_dir)
     load_tools()
+    inv = get_inventory()
     httpd = ThreadingHTTPServer((host, port), PanelHandler)
     bound_host, bound_port = httpd.server_address[:2]
     print(f"netprobe panel: http://{bound_host}:{bound_port}  (Ctrl+C to stop)")
+    print(f"device inventory: {inv.path}  (may hold SNMP community strings)")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

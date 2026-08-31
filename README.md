@@ -17,12 +17,26 @@ The web panel (`netprobe serve`) groups every capability into two menus:
   certificate watch (TLS expiry across many hosts), host status (up/down list)
 - **Device monitoring** — Cisco interface status and bandwidth over SNMP v2c,
   FortiGate interfaces / WAN (SD-WAN) health / top talkers over the FortiOS
-  REST API
+  REST API, plus **device discovery** (sweep a range for SNMP devices) and a
+  **saved device inventory** so you don't retype switch addresses
 
-Credentials (SNMP community strings, FortiGate API tokens) are entered per run
-and are never written to disk or browser storage. The SNMP and FortiGate
-clients are both hand-rolled on the standard library — still no third-party
-dependencies.
+The SNMP and FortiGate clients are both hand-rolled on the standard library —
+still no third-party dependencies. FortiGate API tokens are entered per run and
+never stored. SNMP community strings can optionally be saved with a device (see
+below).
+
+### Saved devices
+
+`Discover devices (SNMP)` sweeps a CIDR or `a.b.c.d-e` range, and each device
+that answers is written to an inventory file (default `~/.netprobe/devices.json`,
+change with `netprobe serve --data-dir DIR` or `$NETPROBE_DATA`). `Saved
+devices` lists / adds / removes entries. Every device-monitoring tool then shows
+a **Saved device** dropdown that fills in the host (and uses the saved community
+if there is one).
+
+The inventory file is written `0600` and may contain SNMP community strings in
+plain text — keep it on a single-user machine, or leave the community blank and
+type it per run.
 
 > Only probe hosts and networks you own or are explicitly authorised to test.
 

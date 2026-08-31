@@ -124,3 +124,22 @@ def test_api_unknown_tool_returns_404(panel):
     with pytest.raises(urllib.error.HTTPError) as exc:
         _post(f"{panel}/api/tools/nope", {})
     assert exc.value.code == 404
+
+
+def test_inventory_endpoint_roundtrip(panel):
+    status, data = _post(
+        f"{panel}/api/inventory",
+        {"host": "10.0.0.1", "name": "core", "kind": "cisco", "community": "public"},
+    )
+    assert status == 200
+    device = next(d for d in data["devices"] if d["host"] == "10.0.0.1")
+    assert device["name"] == "core"
+    assert device["has_community"] is True
+    assert "community" not in device  # never sent back to the browser
+
+    status, listed = _get(f"{panel}/api/inventory")
+    assert any(d["host"] == "10.0.0.1" for d in json.loads(listed)["devices"])
+
+    status, after = _post(f"{panel}/api/inventory", {"action": "remove", "host": "10.0.0.1"})
+    assert after["removed"] is True
+    assert after["devices"] == []

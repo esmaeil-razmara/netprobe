@@ -29,6 +29,57 @@ async function api(path, options) {
   return data;
 }
 
+/* ---------- saved device inventory ---------------------------------- */
+
+let inventoryCache = null;
+
+async function loadInventory(force) {
+  if (force) inventoryCache = null;
+  if (!inventoryCache) {
+    inventoryCache = api("/api/inventory")
+      .then((d) => d.devices || [])
+      .catch(() => []);
+  }
+  return inventoryCache;
+}
+
+async function addDevicePicker(view, form) {
+  const devices = await loadInventory();
+  if (!devices.length) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "field field-wide device-picker";
+  const label = document.createElement("label");
+  label.textContent = "Saved device";
+  const select = document.createElement("select");
+  select.innerHTML = '<option value="">— enter manually —</option>';
+  for (const dev of devices) {
+    const opt = document.createElement("option");
+    opt.value = dev.host;
+    opt.textContent = dev.name ? `${dev.name} (${dev.host})` : dev.host;
+    select.append(opt);
+  }
+  const communityInput = form.querySelector('[name="community"]');
+  const communityRequired = communityInput ? communityInput.required : false;
+  select.addEventListener("change", () => {
+    const dev = devices.find((d) => d.host === select.value);
+    const hostInput = form.querySelector('[name="host"], [name="range"]');
+    if (dev && hostInput) hostInput.value = dev.host;
+    if (communityInput) {
+      if (dev && dev.has_community) {
+        communityInput.value = "";
+        communityInput.placeholder = "using the saved community";
+        communityInput.required = false;
+      } else {
+        communityInput.placeholder = "read-only community";
+        communityInput.required = communityRequired;
+      }
+    }
+  });
+  wrap.append(label, select);
+  form.querySelector(".fields").prepend(wrap);
+}
+
 /* ---------- theme ----------------------------------------------------- */
 
 const THEME_KEY = "netprobe:theme";
@@ -154,6 +205,10 @@ function selectTool(name) {
     fieldsEl.append(wrap);
   }
 
+  if (tool.category === "Device monitoring") {
+    addDevicePicker(view, form);
+  }
+
   const runBtn = $(".run-btn", view);
   const statusEl = $(".run-status", view);
   const errEl = $(".tool-error", view);
@@ -189,6 +244,7 @@ function selectTool(name) {
         body: JSON.stringify(params),
       });
       renderResult(view, data);
+      if (name === "devices" || name === "snmp-discover") loadInventory(true);
       pushHistory(name, withoutSecrets(params), data);
       renderHistory(view, tool);
     } catch (err) {

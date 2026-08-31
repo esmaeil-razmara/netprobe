@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Dict
 
 from ..snmp import SNMPError, walk
+from ._util import resolve_community
 from . import Field, Result, Tool, register
 
 # column OID -> short key
@@ -26,9 +27,7 @@ def _run(params: Dict[str, str]) -> Result:
     host = (params.get("host") or "").strip()
     if not host:
         raise ValueError("host is required")
-    community = (params.get("community") or "").strip()
-    if not community:
-        raise ValueError("community string is required")
+    community = resolve_community(params, host)
     timeout = float(params.get("timeout") or 2.0)
 
     by_index: Dict[str, Dict[str, object]] = {}

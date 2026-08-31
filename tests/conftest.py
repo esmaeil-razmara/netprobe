@@ -2,7 +2,19 @@ import os
 
 import pytest
 
+from netprobe import inventory
+
 _RUN_NETWORK = os.environ.get("NETPROBE_NETWORK_TESTS") == "1"
+
+
+@pytest.fixture(autouse=True)
+def isolated_inventory(tmp_path):
+    """Keep every test off the real ~/.netprobe/devices.json."""
+    inventory.set_data_dir(str(tmp_path))
+    try:
+        yield inventory.get_inventory()
+    finally:
+        inventory.set_data_dir(None)
 
 
 def pytest_collection_modifyitems(config, items):

@@ -158,3 +158,53 @@ def test_snmp_bandwidth_tool(monkeypatch):
         {"host": "10.0.0.1", "community": "public", "interval": "10"}
     )
     assert result.rows and result.rows[0][0] == "Gi0/1"
+
+
+def test_snmp_tool_uses_saved_community(monkeypatch, isolated_inventory):
+    from netprobe.inventory import Device
+    import netprobe.tools.snmp_interfaces_tool as mod
+
+    isolated_inventory.upsert(Device(host="10.0.0.1", community="s3cret", kind="cisco"))
+    seen = {}
+
+    def fake_walk(host, community, base, **k):
+        seen["community"] = community
+        return _IF_DATA.get(base, [])
+
+    monkeypatch.setattr(mod, "walk", fake_walk)
+    get_tool("snmp-interfaces").run({"host": "10.0.0.1"})  # no community in the form
+    assert seen["community"] == "s3cret"
+
+
+def test_snmp_tool_errors_without_any_community(isolated_inventory):
+    with pytest.raises(ValueError, match="community"):
+        get_tool("snmp-interfaces").run({"host": "10.9.9.9"})
+
+
+def test_snmp_discover_finds_and_saves(monkeypatch, isolated_inventory):
+    import netprobe.tools.snmp_discover_tool as mod
+
+    def fake_get(host, community, oids, **k):
+        if host == "10.0.0.2":
+            return {"1.3.6.1.2.1.1.5.0": "edge-sw", "1.3.6.1.2.1.1.1.0": "Cisco IOS Software"}
+        raise mod.SNMPError("timeout")
+
+    monkeypatch.setattr(mod, "get", fake_get)
+    result = get_tool("snmp-discover").run(
+        {"range": "10.0.0.1-4", "community": "public", "save": "1"}
+    )
+    assert result.rows == [["10.0.0.2", "edge-sw", "cisco", "Cisco IOS Software"]]
+    assert "saved 1" in result.summary
+    saved = isolated_inventory.get("10.0.0.2")
+    assert saved and saved.community == "public" and saved.kind == "cisco"
+
+
+def test_devices_tool_add_list_remove(isolated_inventory):
+    add = get_tool("devices").run(
+        {"action": "add", "host": "10.0.0.5", "name": "sw5", "kind": "cisco"}
+    )
+    assert any(row[0] == "10.0.0.5" for row in add.rows)
+    listed = get_tool("devices").run({"action": "list"})
+    assert listed.rows[0][0] == "10.0.0.5"
+    removed = get_tool("devices").run({"action": "remove", "host": "10.0.0.5"})
+    assert removed.rows == []
